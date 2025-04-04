@@ -99,7 +99,6 @@
 #include <linux/bpf.h>
 #include <linux/tick.h>
 #include <linux/cpufreq_times.h>
-#include <linux/simple_lmk.h>
 
 #include <asm/pgalloc.h>
 #include <linux/uaccess.h>
@@ -525,6 +524,7 @@ struct vm_area_struct *vm_area_dup(struct vm_area_struct *orig)
 		return NULL;
 	}
 	INIT_LIST_HEAD(&new->anon_vma_chain);
+	vma_numab_state_init(new);
 	dup_anon_vma_name(orig, new);
 
 	return new;
@@ -532,6 +532,7 @@ struct vm_area_struct *vm_area_dup(struct vm_area_struct *orig)
 
 void __vm_area_free(struct vm_area_struct *vma)
 {
+	vma_numab_state_free(vma);
 	free_anon_vma_name(vma);
 	vma_lock_free(vma);
 	kmem_cache_free(vm_area_cachep, vma);
@@ -1298,7 +1299,6 @@ static inline void __mmput(struct mm_struct *mm)
 	ksm_exit(mm);
 	khugepaged_exit(mm); /* must run before exit_mmap */
 	exit_mmap(mm);
-	simple_lmk_mm_freed(mm);
 	mm_put_huge_zero_page(mm);
 	set_mm_exe_file(mm, NULL);
 	if (!list_empty(&mm->mmlist)) {
